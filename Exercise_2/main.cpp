@@ -3,6 +3,8 @@
 #include <sstream>
 #include "Eigen/Eigen"
 #include <fstream>
+#include <cmath>
+#include <algorithm>
 using namespace std;
 using namespace Eigen;
 using namespace PolygonalLibrary;

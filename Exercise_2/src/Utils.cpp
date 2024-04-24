@@ -3,6 +3,8 @@
 #include <Eigen/Eigen>
 #include <fstream>
 #include <sstream>
+#include <cmath>
+#include <algorithm>
 namespace PolygonalLibrary {
 
 bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
@@ -35,17 +37,17 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
     if(!ImportCell2Ds(filename + "/Cell2Ds.csv", mesh)) {
         return false;
     } else {
-        // Test
+        // Test 1
         //cout << mesh.NumberCell2D;
         for(unsigned int c = 0; c < mesh.NumberCell2D; c++) {
-            vector<unsigned int> edges = mesh.Cell2DEdges[c]; // estraggo i lati dal poligono c-esimo
+            vector<unsigned int> edges = mesh.Cell2DEdges[c]; // extract the edges of the c-th polygon
             const unsigned int numEdges = edges.size();
             const unsigned int numVertices = mesh.Cell2DVertices[c].size();
             if(numEdges != numVertices) {
                 cout << "There is a Cell 2D that is not a proper polygon" << endl;
                 return false;
             }
-            for(unsigned int e=0;e<numEdges;e++) { // estraggo gli id dei singoli lati
+            for(unsigned int e=0;e<numEdges;e++) { // extract the edges ids
                 const unsigned int origin = mesh.Cell1DVertices[edges[e]][0];
                 const unsigned int end = mesh.Cell1DVertices[edges[e]][1];
 
@@ -61,9 +63,10 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
                 }
             }
         }
+
         // Let's print all the information related to the 2D cells
         cout << "2D Cells: " << endl;
-        for(int i=0;i<mesh.NumberCell2D;i++){
+        for(unsigned int i=0;i<mesh.NumberCell2D;i++){
             cout << i<< ". Id:\t" << mesh.Cell2DId[i] << endl;
             cout << "NumVertices:\t" << mesh.Cell2DVertices[i].size() << endl;
             cout << "Vertices Ids:";
@@ -78,6 +81,40 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
             }
             cout << endl << endl;
         }
+        // 2D cell information stored correctly
+
+        const double geometric1Dtol = 1.0e-12;
+        // Test 2: length of edges is non zero
+        for(unsigned int e=0;e<mesh.NumberCell1D;e++) {// iterate on edges' ids
+            const unsigned int origin = mesh.Cell1DVertices[e][0];
+            const unsigned int end = mesh.Cell1DVertices[e][1]; // (origin,end)==(fromId,toId) in mesh.Cell1DVertices[e]
+            const Vector2d origin_coord = mesh.Cell0DCoordinates[origin];
+            const Vector2d end_coord = mesh.Cell0DCoordinates[end];
+            const double length = sqrt((origin_coord(0)-end_coord(0))*(origin_coord(0)-end_coord(0))+(origin_coord(1)-end_coord(1))*(origin_coord(1)-end_coord(1)));
+            if(length < geometric1Dtol) {
+                cout << "There is an edge shorter than the 1D geometric tolerance." << endl;
+                return false;
+            }
+        }
+
+        // Test 3: area of triangles is non zero
+        const double geometric2Dtol = (sqrt(3.)/4.)*geometric1Dtol*geometric1Dtol;
+        // the minimum area is chosen to be the area of the equilateral triangle with sides' length = to geometric1Dtol
+        // we use properties of the cross product
+        for(unsigned int c=0; c<mesh.NumberCell2D;c++) { // iterate on every polygon
+            if(mesh.Cell2DEdges[c].size()==3) { // we extract the triangles
+                vector<unsigned int> id_vertices = mesh.Cell2DVertices[c];
+                Vector2d coord1 = mesh.Cell0DCoordinates[id_vertices[0]];
+                Vector2d coord2 = mesh.Cell0DCoordinates[id_vertices[1]];
+                Vector2d coord3 = mesh.Cell0DCoordinates[id_vertices[2]];
+                if(0.5*abs((coord2(0)-coord1(0))*(coord3(1)-coord1(1))-(coord3(0)-coord1(0))*(coord2(1)-coord1(0))) < geometric2Dtol) {
+                    cout << "There is a triangle whose area is smaller than the 2D geometric tolerance." << endl;
+                    return false;
+                }
+            }
+
+        }
+
     }
     return true;
 }
@@ -195,10 +232,10 @@ bool ImportCell2Ds(const string &filename, PolygonalMesh &mesh) {
         for(const string& line : listLines) {
             istringstream convert(line);
             unsigned int id;
-            unsigned int dummyVar; // dummy variable that will contain the marker of the 2D cell (they are all equal to 0)
+            unsigned int unused; // unused variable that will contain the marker of the 2D cell (they are all equal to 0)
             unsigned int numVertices;
             unsigned int numEdges;
-            convert >> id >> dummyVar >> numVertices; // line 182 makes this work
+            convert >> id >> unused >> numVertices; // line 182 makes this work
             mesh.Cell2DId.push_back(id);
             vector<unsigned int> vertices(numVertices);
             for(unsigned int i=0; i<numVertices; i++) {
@@ -216,7 +253,6 @@ bool ImportCell2Ds(const string &filename, PolygonalMesh &mesh) {
     }
     return true;
 }
-
 }
 
 
