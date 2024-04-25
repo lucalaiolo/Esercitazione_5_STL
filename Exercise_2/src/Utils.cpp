@@ -40,7 +40,7 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
         // Test 1
         //cout << mesh.NumberCell2D;
         for(unsigned int c = 0; c < mesh.NumberCell2D; c++) {
-            vector<unsigned int> edges = mesh.Cell2DEdges[c]; // extract the edges of the c-th polygon
+            const vector<unsigned int> edges = mesh.Cell2DEdges[c]; // extract the edges of the c-th polygon
             const unsigned int numEdges = edges.size();
             const unsigned int numVertices = mesh.Cell2DVertices[c].size();
             if(numEdges != numVertices) {
@@ -83,7 +83,8 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
         }
         // 2D cell information stored correctly
 
-        const double geometric1Dtol = 1.0e-12;
+        const double geometric1Dtol = 1.0e-14;
+
         // Test 2: length of edges is non zero
         for(unsigned int e=0;e<mesh.NumberCell1D;e++) {// iterate on edges' ids
             const unsigned int origin = mesh.Cell1DVertices[e][0];
@@ -103,10 +104,10 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
         // we use properties of the cross product
         for(unsigned int c=0; c<mesh.NumberCell2D;c++) { // iterate on every polygon
             if(mesh.Cell2DEdges[c].size()==3) { // we extract the triangles
-                vector<unsigned int> id_vertices = mesh.Cell2DVertices[c];
-                Vector2d coord1 = mesh.Cell0DCoordinates[id_vertices[0]];
-                Vector2d coord2 = mesh.Cell0DCoordinates[id_vertices[1]];
-                Vector2d coord3 = mesh.Cell0DCoordinates[id_vertices[2]];
+                const vector<unsigned int> id_vertices = mesh.Cell2DVertices[c];
+                const Vector2d coord1 = mesh.Cell0DCoordinates[id_vertices[0]];
+                const Vector2d coord2 = mesh.Cell0DCoordinates[id_vertices[1]];
+                const Vector2d coord3 = mesh.Cell0DCoordinates[id_vertices[2]];
                 if(0.5*abs((coord2(0)-coord1(0))*(coord3(1)-coord1(1))-(coord3(0)-coord1(0))*(coord2(1)-coord1(0))) < geometric2Dtol) {
                     cout << "There is a triangle whose area is smaller than the 2D geometric tolerance." << endl;
                     return false;
@@ -150,7 +151,7 @@ bool ImportCell0Ds(const string &filename, PolygonalMesh &mesh) {
         unsigned int id;
         unsigned int marker;
         Vector2d coordinates;
-        convert >> id >> marker >> coordinates(0) >> coordinates(1); // line 96 makes this work
+        convert >> id >> marker >> coordinates(0) >> coordinates(1); // line 134 makes this work
 
         mesh.Cell0DId.push_back(id);
         mesh.Cell0DCoordinates.push_back(coordinates);
@@ -191,7 +192,7 @@ bool ImportCell1Ds(const string &filename, PolygonalMesh &mesh) {
                 unsigned int id;
                 unsigned int marker;
                 Vector2i vertices;
-                convert >> id >> marker >> vertices(0) >> vertices(1); // line 139 makes this work
+                convert >> id >> marker >> vertices(0) >> vertices(1); // line 177 makes this work
                 mesh.Cell1DId.push_back(id);
                 mesh.Cell1DVertices.push_back(vertices);
 
@@ -235,7 +236,7 @@ bool ImportCell2Ds(const string &filename, PolygonalMesh &mesh) {
             unsigned int unused; // unused variable that will contain the marker of the 2D cell (they are all equal to 0)
             unsigned int numVertices;
             unsigned int numEdges;
-            convert >> id >> unused >> numVertices; // line 182 makes this work
+            convert >> id >> unused >> numVertices; // line 220 makes this work
             mesh.Cell2DId.push_back(id);
             vector<unsigned int> vertices(numVertices);
             for(unsigned int i=0; i<numVertices; i++) {
