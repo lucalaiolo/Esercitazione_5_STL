@@ -83,7 +83,7 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
         }
         // 2D cell information stored correctly
 
-        const double geometric1Dtol = 1.0e-14;
+        const double geometric1Dtol = 1.0e-12;
 
         // Test 2: length of edges is non zero
         for(unsigned int e=0;e<mesh.NumberCell1D;e++) {// iterate on edges' ids
@@ -98,10 +98,18 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
             }
         }
 
-        // Test 3: area of triangles is non zero
-        const double geometric2Dtol = (sqrt(3.)/4.)*geometric1Dtol*geometric1Dtol;
-        // the minimum area is chosen to be the area of the equilateral triangle with sides' length = to geometric1Dtol
+        // Test 3: area of polygons is non zero
+        // we check a sufficient condition: for every polygon, given its n vertices,
+        // we calculate the area of every possible triangle with the following two properties:
+        // 1) the triangle must lie within the polygon
+        // 2) its vertices must belong to the set of the n vertices of the polygon
+        // If these areas are all greater than a certain 2D geometric tolerance, then the area of every polygon will be too.
+
+        const double geometric2Dtol = max((sqrt(3.)/4.)*geometric1Dtol*geometric1Dtol,2.2e-16);
+        // the minimum area is chosen to be the maximum between the area of the equilateral triangle with sides' length = to geometric1Dtol
+        // and 2.2e-16
         // we use properties of the cross product
+
         for(unsigned int c=0; c<mesh.NumberCell2D;c++) { // iterate on every polygon
             if(mesh.Cell2DEdges[c].size()==3) { // we extract the triangles
                 const vector<unsigned int> id_vertices = mesh.Cell2DVertices[c];
@@ -113,9 +121,7 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
                     return false;
                 }
             }
-
         }
-
     }
     return true;
 }
