@@ -98,12 +98,7 @@ bool ImportMesh(const string &filename, PolygonalMesh &mesh) {
             }
         }
 
-        // Test 3: area of polygons is non zero
-        // we check a sufficient condition: for every polygon, given its n vertices,
-        // we calculate the area of every possible triangle with the following two properties:
-        // 1) the triangle must lie within the polygon
-        // 2) its vertices must belong to the set of the n vertices of the polygon
-        // If these areas are all greater than a certain 2D geometric tolerance, then the area of every polygon will be too.
+        // Test 3: area of triangles is non zero
 
         const double geometric2Dtol = max((sqrt(3.)/4.)*geometric1Dtol*geometric1Dtol,2.2e-16);
         // the minimum area is chosen to be the maximum between the area of the equilateral triangle with sides' length = to geometric1Dtol
